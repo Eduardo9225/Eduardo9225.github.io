@@ -60,15 +60,29 @@ Another way to chech and visualize the position and orientation of the camera is
         Then we will need to add the topic /tf to the rviz window.
 
 
-After that we will need to start the ROS node in MATLAB. To do this, we will use the following command:
+If Rviz displays the camera position and orientation, then we can continue with the next step.
+
+In Matlab is necessary to add the ROS_IP and ROS_MASTER_URI to the MATLAB environment variables. To do this, we will use the following commands:
 
 ```matlab
+>> setenv('ROS_IP', 'IP_ADDRESS')
+>> setenv('ROS_MASTER_URI', 'http://localhost:11311')
+```
+
+Where IP_ADDRESS is the IP address of the computer where we are running MATLAB. and the ROS_MASTER_URI is the IP address of the Jetson nano. Later we can add this commands to the startup.m file to run it automatically when we start MATLAB or we can create a script and add this commands to the begining.
 
 Then we will need to start the ROS node in MATLAB. To do this, we will use the following command:
 
 ```matlab
 >> rosinit
 ```
+We can check if the ROS node is running by using the following command:
+
+```matlab
+>> rostopic list
+```
+
+If displays the list of topics, then we can continue with the next step.
 
 Now we will need to read the topic from the Jetson nano. To do this, we will use the following command:
 
