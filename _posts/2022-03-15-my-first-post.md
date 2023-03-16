@@ -1,18 +1,93 @@
 ---
 layout: post
-title: My First Blog Post
+title: ROS Toolbox for MATLAB
 author: Hector Tovanche
-categories: [blog, jekyll]
-tags: [blogging, jekyll, markdown]
+categories: [Robotics, MATLAB, ROS]
+tags: [MATLAB, ROS, T256]
 ---
 
 # Introduction
 
-This is my first blog post written in Markdown. In this post, I'll be discussing...
+In this blog we will use the ROS toolbox for MATLAB to read a topic from a Jetson nano using the T265 Intel camera, and then we will subscribe to the /tf topic to get the position and orientation of the camera. Then we will plot the position of the camera in a 3D plot.
 
 ## Section 1
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam at risus quis velit volutpat tristique.
+The first step is to install the ROS toolbox for MATLAB. To do this, we will use the following command:
+
+```matlab
+>> rostoolbox
+```
+
+This will install the toolbox and all the dependencies. After this, we will need to start the ROS master in the Jetson nano. But also is neccesary to Set the ROS_MASTER_URI and ROS_IP environment variables.
+to do this we will use the following commands:
+
+```bash
+$ export ROS_MASTER_URI=http://localhost:11311
+$ export ROS_IP=IP_ADDRESS
+```
+Where IP_ADDRESS is the IP address of the computer where we are running MATLAB. and the ROS_MASTER_URI is the IP address of the Jetson nano.
+
+Then we will need to start the ROS master in the Jetson nano.
+
+```bash
+$ roscore
+```
+
+Then we will to launch the T265 camera in the Jetson nano. To do this, we will use the following command:
+
+```bash
+$ roslaunch realsense2_camera rs_t265.launch
+```
+
+We can check if the camera is working by using the following command:
+
+```bash
+$ rostopic echo /camera/odom/sample
+```
+
+Also we can check the position and orientation of the camera by using the following command:
+
+```bash
+$ rostopic echo /tf
+```
+
+Another way to chech and visualize the position and orientation of the camera is by using rviz with the following command:
+    
+    ```bash
+    $ rosrun rviz rviz
+    ```
+        
+        Then we will need to add the topic /tf to the rviz window.
+
+
+After that we will need to start the ROS node in MATLAB. To do this, we will use the following command:
+
+```matlab
+
+Then we will need to start the ROS node in MATLAB. To do this, we will use the following command:
+
+```matlab
+>> rosinit
+```
+
+Now we will need to read the topic from the Jetson nano. To do this, we will use the following command:
+
+```matlab
+>> odom = rossubscriber('/odom/sample');
+```
+
+Then we will need to read the data from the topic. To do this, we will use the following command:
+
+```matlab
+>> odomdata = receive(odom);
+```
+
+Now we will need to read the position and orientation of the camera. To do this, we will use the following command:
+
+```matlab
+>> position = odomdata.Pose.Pose.Position;
+>> orientation = odomdata.Pose.Pose.Orientation;
+```
 
 ### Subsection 1.1
 
