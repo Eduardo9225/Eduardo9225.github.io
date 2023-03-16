@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: default
 title: ROS Toolbox for MATLAB
 author: Hector Tovanche
 categories: [Robotics, MATLAB, ROS]
