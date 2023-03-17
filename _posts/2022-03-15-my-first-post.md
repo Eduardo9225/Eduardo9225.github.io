@@ -124,6 +124,8 @@ Now we will need to read the position and orientation of the camera. To do this,
 
 Convert quaternion to Euler angles
 
+$a=x*5$ 
+
 $$
 \begin{aligned}
 \mathrm{roll} &= \mathrm{atan2}\left(2(w x + y z), 1 - 2(x^2 + y^2)\right) \\
