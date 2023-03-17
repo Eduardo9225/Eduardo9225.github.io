@@ -6,7 +6,7 @@ categories: [Robotics, MATLAB, ROS]
 tags: [MATLAB, ROS, T256]
 ---
 
-# Introduction
+# Using the ROS Toolbox for MATLAB with the T265 Intel camera
 
 In this blog we will use the ROS toolbox for MATLAB to read a topic from a Jetson nano using the T265 Intel camera, and then we will subscribe to the /tf topic to get the position and orientation of the camera. Then we will plot the position of the camera in a 3D plot.
 
@@ -121,6 +121,21 @@ Now we will need to read the position and orientation of the camera. To do this,
 >> position = odomdata.Pose.Pose.Position;
 >> orientation = odomdata.Pose.Pose.Orientation;
 ```
+
+Convert quaternion to Euler angles
+
+$\begin{align*}
+\mathrm{roll} &= \mathrm{atan2}\left(2(w x + y z), 1 - 2(x^2 + y^2)\right) \\
+\mathrm{pitch} &= \mathrm{asin}\left(2(w y - z x)\right) \\
+\mathrm{yaw} &= \mathrm{atan2}\left(2(w z + x y), 1 - 2(y^2 + z^2)\right)
+\end{align*}
+$
+```matlab
+>> q = [orientation.X orientation.Y orientation.Z orientation.W];
+>> eul = quat2eul(q);
+```
+
+
 
 ### Subsection 1.1
 
