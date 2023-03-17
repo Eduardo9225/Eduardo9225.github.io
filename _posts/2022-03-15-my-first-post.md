@@ -1,7 +1,3 @@
-<script
-  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
-  type="text/javascript">
-</script>
 ---
 layout: default
 title: ROS Toolbox for MATLAB
@@ -9,7 +5,10 @@ author: Hector Tovanche
 categories: [Robotics, MATLAB, ROS]
 tags: [MATLAB, ROS, T256]
 ---
-
+<script
+  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+  type="text/javascript">
+</script>
 # Using the ROS Toolbox for MATLAB with the T265 Intel camera
 
 In this blog we will use the ROS toolbox for MATLAB to read a topic from a Jetson nano using the T265 Intel camera, and then we will subscribe to the /tf topic to get the position and orientation of the camera. Then we will plot the position of the camera in a 3D plot.
