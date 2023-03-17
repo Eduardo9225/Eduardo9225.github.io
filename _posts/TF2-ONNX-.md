@@ -1,0 +1,269 @@
+---
+layout: default
+title: Converting a TF2 model to ONNX format
+author: Hector Tovanche
+categories: [TensorFlow, ONNX, AI]
+tags: [AI, ONNX, Models]
+---
+
+# Introduction
+
+In this blog we will convert a segmentation model from TensorFlow 2 to ONNX format. Then we will convert the onnx model to OpenVINO format. Finally we will use the OpenVINO model to do inference in the Oak-D camera. 
+
+The Oak-D camera is a small, low-power, and low-cost computer vision module. It is capable of running deep neural networks in real-time. It is a perfect solution for robotics applications that require computer vision, such as object detection, segmentation, and classification.
+
+
+## Install tf2onnx
+
+To convert the Tensorflow 2 model to ONNX format we will use the onnx tf2onnx, which is a tool that converts TensorFlow models to ONNX format. To install this tool in our Anaconda environment we will use the following command:
+    
+    ```bash
+    $ conda install -c conda-forge tf2onnx
+    ```
+
+
+## Converting the model
+After that in our script we will need to import the following libraries:
+
+```python
+import tensorflow as tf
+import tf2onnx
+import numpy as np
+import os
+from tensorflow import keras
+from tensorflow.keras import backend as K
+from tensorflow.keras.models import Model
+from tensorflow.keras.regularizers import l2
+from tensorflow.keras.models import Model
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras import applications, optimizers
+from tensorflow.keras.applications.vgg16 import VGG16, preprocess_input
+from tensorflow.keras.preprocessing.image import ImageDataGenerator, load_img, img_to_array
+from tensorflow.keras.utils import model_to_dot, plot_model
+from tensorflow.keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, EarlyStopping, CSVLogger, LearningRateScheduler, TensorBoard
+from tensorflow.keras.layers import Input, Lambda, Activation, Conv2D, MaxPooling2D, BatchNormalization, Add, concatenate, Conv2DTranspose
+import pandas as pd
+```
+
+Since we will be converting the segmentation model frome the .h5 file, we need to recreate the model and his training weights. In this case the model was trained using Vgg16 as enconder and U-net as decoder. To load the model we will use the following command:
+
+```python
+os.chdir('PATH_TO_MODEL')
+def create_model():
+    # Create model and load pretrained weights.
+    vgg16_unet = unet(num_classes = 24, input_shape = (256, 256, 3), lr_init = 0.0001, vgg_weight_path='pretrained_weights/vgg16_weights_tf_dim_ordering_tf_kernels.h5')
+
+    vgg16_unet.load_weights("./vgg16_unet_model_200_full.h5")
+
+
+    spec = (tf.TensorSpec((None,256,256,3), tf.float32, name="input"),)
+    output_path = vgg16_unet.name + ".onnx"
+    print("Output path: ", output_path)
+    model_proto, _ = tf2onnx.convert.from_keras(vgg16_unet, input_signature=spec, output_path=output_path)
+    output_names = [output.name for output in model_proto.graph.output]
+    print("Output names: ", output_names)
+```
+
+This will create the model converted to the ONNX format in the same folder where the script is located.
+The architecture of the model must to be indicated in the same script. In this case we will use the following architecture:
+
+```python
+def unet(num_classes, input_shape, lr_init, vgg_weight_path=None):
+    img_input = Input(input_shape)
+
+    # Block 1
+    x = Conv2D(64, (3, 3), padding='same', name='block1_conv1')(img_input)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+
+    x = Conv2D(64, (3, 3), padding='same', name='block1_conv2')(x)
+    x = BatchNormalization()(x)
+    block_1_out = Activation('relu')(x)
+
+    x = MaxPooling2D()(block_1_out)
+
+    # Block 2
+    x = Conv2D(128, (3, 3), padding='same', name='block2_conv1')(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+
+    x = Conv2D(128, (3, 3), padding='same', name='block2_conv2')(x)
+    x = BatchNormalization()(x)
+    block_2_out = Activation('relu')(x)
+
+    x = MaxPooling2D()(block_2_out)
+
+    # Block 3
+    x = Conv2D(256, (3, 3), padding='same', name='block3_conv1')(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+
+    x = Conv2D(256, (3, 3), padding='same', name='block3_conv2')(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+
+    x = Conv2D(256, (3, 3), padding='same', name='block3_conv3')(x)
+    x = BatchNormalization()(x)
+    block_3_out = Activation('relu')(x)
+
+    x = MaxPooling2D()(block_3_out)
+
+    # Block 4
+    x = Conv2D(512, (3, 3), padding='same', name='block4_conv1')(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+
+    x = Conv2D(512, (3, 3), padding='same', name='block4_conv2')(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+
+    x = Conv2D(512, (3, 3), padding='same', name='block4_conv3')(x)
+    x = BatchNormalization()(x)
+    block_4_out = Activation('relu')(x)
+
+    x = MaxPooling2D()(block_4_out)
+
+    # Block 5
+    x = Conv2D(512, (3, 3), padding='same', name='block5_conv1')(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+
+    x = Conv2D(512, (3, 3), padding='same', name='block5_conv2')(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+
+    x = Conv2D(512, (3, 3), padding='same', name='block5_conv3')(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+
+    for_pretrained_weight = MaxPooling2D()(x)
+
+    # Load pretrained weights.
+    if vgg_weight_path is not None:
+        vgg16 = Model(img_input, for_pretrained_weight)
+        vgg16.load_weights(vgg_weight_path, by_name=True)
+
+    # UP 1
+    x = Conv2DTranspose(512, (2, 2), strides=(2, 2), padding='same')(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+
+    x = concatenate([x, block_4_out])
+    x = Conv2D(512, (3, 3), padding='same')(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+
+    x = Conv2D(512, (3, 3), padding='same')(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+
+    # UP 2
+    x = Conv2DTranspose(256, (2, 2), strides=(2, 2), padding='same')(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+
+    x = concatenate([x, block_3_out])
+    x = Conv2D(256, (3, 3), padding='same')(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+
+    x = Conv2D(256, (3, 3), padding='same')(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+
+    # UP 3
+    x = Conv2DTranspose(128, (2, 2), strides=(2, 2), padding='same')(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+
+    x = concatenate([x, block_2_out])
+    x = Conv2D(128, (3, 3), padding='same')(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+
+    x = Conv2D(128, (3, 3), padding='same')(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+
+    # UP 4
+    x = Conv2DTranspose(64, (2, 2), strides=(2, 2), padding='same')(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+
+    x = concatenate([x, block_1_out])
+    x = Conv2D(64, (3, 3), padding='same')(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+
+    x = Conv2D(64, (3, 3), padding='same')(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+
+    # last conv
+    x = Conv2D(num_classes, (3, 3), activation='softmax', padding='same')(x)
+
+    model = Model(img_input, x)
+    model.compile(Adam(learning_rate=lr_init),
+                  loss='categorical_crossentropy',
+                  metrics=[dice_coef])
+    return model
+
+```
+
+The dice coeficient is defined as:
+
+```python
+def dice_coef(y_true, y_pred):
+    return (2. * K.sum(y_true * y_pred) + 1.) / (K.sum(y_true) + K.sum(y_pred) + 1.)
+```
+
+After running the code, the model will be converted to the onnx format. 
+
+## Run the inference using ONNX runtime
+We can use the onnxruntime to run the model. The next code is used to load the model and create the inference session. The input_name and output_name are used to get the input and output name of the model.
+
+```python 
+import onnxruntime as rt
+import numpy as np
+import pandas as pd
+import cv2
+import os
+
+output_path = "model_1.onnx"
+m = rt.InferenceSession(output_path, providers=["CUDAExecutionProvider"]) #TensorrtExecutionProvider CUDAExecutionProvider CPUExecutionProvider
+input_name = m.get_inputs()[0].name
+output_name = m.get_outputs()[0].name
+print("Input name: ", input_name)
+print("Output name: ", output_name)
+
+```
+To make a prediction on a single image we need to preprocess the image. The image is resized to 256x256, change the space color from BGR to RGB, and then normalized. The image is converted to a numpy array and then reshaped to (1, 256, 256, 3). The model expects a batch of images as input. The batch size is 1. The next code is used to preprocess the image and make an inference. The predict function takes the image as input and returns the prediction.
+
+```python
+def predict(img):
+    img = cv2.resize(img, (256, 256))
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    img = np.expand_dims(img, axis=0)
+    img = img.astype(np.float32)
+    img = img / 255.0
+    onnx_pred = m.run([output_name], {input_name: img})
+    return onnx_pred
+
+```
+
+The next code is used to load the image and make a prediction.
+
+```python
+img = cv2.imread("test.jpg")
+pred = predict(img)
+```
+The pred variable will contain a vector with all the predictions per each pixel, is neccesary to change the shape of the resulting vector to the input shape. The next code will perform this actions. 
+
+```python
+predictions = np.squeeze(onnx_pred)
+predictions = np.array(predictions)
+pred_img = onehot_to_rgb(predictions,id2code)
+pred_img = cv2.cvtColor(pred_img, cv2.COLOR_RGB2BGR)
+
+```
+...
