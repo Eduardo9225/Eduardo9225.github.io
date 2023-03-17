@@ -124,12 +124,9 @@ Now we will need to read the position and orientation of the camera. To do this,
 
 Convert quaternion to Euler angles
 
-$\begin{align*}
-\mathrm{roll} &= \mathrm{atan2}\left(2(w x + y z), 1 - 2(x^2 + y^2)\right) \\
+$$\mathrm{roll} &= \mathrm{atan2}\left(2(w x + y z), 1 - 2(x^2 + y^2)\right) \\
 \mathrm{pitch} &= \mathrm{asin}\left(2(w y - z x)\right) \\
-\mathrm{yaw} &= \mathrm{atan2}\left(2(w z + x y), 1 - 2(y^2 + z^2)\right)
-\end{align*}
-$
+\mathrm{yaw} &= \mathrm{atan2}\left(2(w z + x y), 1 - 2(y^2 + z^2)\right)$$
 ```matlab
 >> q = [orientation.X orientation.Y orientation.Z orientation.W];
 >> eul = quat2eul(q);
