@@ -127,19 +127,150 @@ Now we will need to read the position and orientation of the camera. To do this,
 
 Convert quaternion to Euler angles
 
-$$a=x*5$$ 
-
 $$
 \begin{aligned}
 \mathrm{roll} &= \mathrm{atan2}\left(2(w x + y z), 1 - 2(x^2 + y^2)\right) \\
 \mathrm{pitch} &= \mathrm{asin}\left(2(w y - z x)\right) \\
 \mathrm{yaw} &= \mathrm{atan2}\left(2(w z + x y), 1 - 2(y^2 + z^2)\right)
 \end{aligned}
+
 $$
+
+Matlab posses a function to convert quaternion to Euler angles. To do this, we will use the following command:
 ```matlab
 >> q = [orientation.X orientation.Y orientation.Z orientation.W];
 >> eul = quat2eul(q);
 ```
+
+Also we can implement our own function to convert quaternion to Euler angles. To do this, we will use the following code:
+
+```matlab
+function [roll, pitch, yaw] = quat2eul(q)
+% Convert quaternion to Euler angles
+% Input:
+%   q = 4-element quaternion vector in the order [w x y z]
+% Output:
+%   roll = rotation around x-axis in radians
+%   pitch = rotation around y-axis in radians
+%   yaw = rotation around z-axis in radians
+
+% Extract components of quaternion
+w = q(1);
+x = q(2);
+y = q(3);
+z = q(4);
+
+% Compute roll, pitch, and yaw
+roll = atan2(2*(w*x + y*z), 1 - 2*(x^2 + y^2));
+pitch = asin(2*(w*y - z*x));
+yaw = atan2(2*(w*z + x*y), 1 - 2*(y^2 + z^2));
+end
+```
+This function accepts a 4-element quaternion vector in the order [w x y z] and returns the rotation around x-axis, y-axis and z-axis in radians.
+We can test this function by using the following command:
+
+```matlab
+>> [roll, pitch, yaw] = quat2eul(q);
+```
+
+Then we can print the results by using the following command:
+
+```matlab
+% Print the Euler angles in degrees
+fprintf('Roll: %f degrees\n', roll*180/pi);
+fprintf('Pitch: %f degrees\n', pitch*180/pi);
+fprintf('Yaw: %f degrees\n', yaw*180/pi);
+```
+
+Now we can focus in the plot part of the project.
+We can simulate the RPY angles to see how the plot will look like. To do this, we will use the following code:
+
+```matlab
+% Simulate RPY angles
+roll = 30; % in degrees
+pitch = 20; % in degrees
+yaw = 10; % in degrees
+
+% Convert to radians
+roll = roll*pi/180;
+pitch = pitch*pi/180;
+yaw = yaw*pi/180;
+```
+
+Now we will define the length of the axes. To do this, we will use the following code:
+
+```matlab
+% Define the length of the axes
+arrow_length = 1;
+```
+
+The next step is to define the reference frame axes.
+
+```matlab
+% Define the reference frame axes
+x_axis = [arrow_length;0;0];
+y_axis = [0;arrow_length;0];
+z_axis = [0;0;arrow_length];
+```
+Now we can define the body frame axes. To do this, we will use the following code:
+
+```matlab
+% Define the body frame axes
+x_body = [1;0;0];
+y_body = [0;1;0];
+z_body = [0;0;1];
+```
+
+Then is neccesary to define the rotation matrix. To do this, we will use the following code:
+
+```matlab
+% Rotate the body axes by the roll, pitch, and yaw angles
+Rz = [cos(yaw) -sin(yaw) 0; sin(yaw) cos(yaw) 0; 0 0 1];
+Ry = [cos(pitch) 0 sin(pitch); 0 1 0; -sin(pitch) 0 cos(pitch)];
+Rx = [1 0 0; 0 cos(roll) -sin(roll); 0 sin(roll) cos(roll)];
+R = Rz*Ry*Rx;
+x_body = R*x_body;
+y_body = R*y_body;
+z_body = R*z_body;
+```
+
+
+Now we can plot the reference frame axes. To do this, we will use the following code:
+
+```matlab
+% Plot the reference frame axes
+quiver3(0,0,0,x_axis(1),x_axis(2),x_axis(3),'r','LineWidth',2,'MaxHeadSize',0.5);
+hold on;
+quiver3(0,0,0,y_axis(1),y_axis(2),y_axis(3),'g','LineWidth',2,'MaxHeadSize',0.5);
+quiver3(0,0,0,z_axis(1),z_axis(2),z_axis(3),'b','LineWidth',2,'MaxHeadSize',0.5);
+```
+
+Then we can plot the body frame axes. To do this, we will use the following code:
+
+```matlab
+% Plot the body frame axes
+
+% Plot the body axes
+quiver3(1,5,2,x_body(1),x_body(2),x_body(3),'r--','LineWidth',2,'MaxHeadSize',0.5);
+quiver3(1,5,2,y_body(1),y_body(2),y_body(3),'g--','LineWidth',2,'MaxHeadSize',0.5);
+quiver3(1,5,2,z_body(1),z_body(2),z_body(3),'b--','LineWidth',2,'MaxHeadSize',0.5);
+```
+
+Finally we can change some properties of the plot. To do this, we will use the following code:
+
+```matlab
+axis equal;
+xlim([-10 10]);
+ylim([-10 10]);
+zlim([-10 10]);
+xlabel('x');
+ylabel('y');
+zlabel('z');
+grid on;
+```
+
+The final result is the following:
+
 
 
 
