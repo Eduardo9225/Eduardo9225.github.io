@@ -124,7 +124,7 @@ Now we will need to read the position and orientation of the camera. To do this,
 
 Convert quaternion to Euler angles
 
-$a=x*5$ 
+$$a=x*5$$ 
 
 $$
 \begin{aligned}
